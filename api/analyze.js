@@ -1,15 +1,24 @@
-// This tells our code it can use a built-in Node.js tool for looking up website IPs.
-import dns from 'dns/promises';
+// This is the NEW, FINAL, CORRECTED analyze.js (v3)
 
-// This is the main "waiter" function for our API. It waits for a request.
-export default async function handler(req, res) {
+// Use the 'require' syntax for Node.js compatibility on Vercel
+const dns = require('dns/promises');
+
+// Use the 'module.exports' syntax for the handler
+module.exports = async (req, res) => {
   // --- Part 1: Receive the Order ---
   console.log("Received a request!");
 
-  // Get the data sent from the browser extension.
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
   const { userQuery, citedSources } = req.body;
 
-  // --- Part 2: Run the Analysis (The Cooking) ---
+  if (!userQuery || !citedSources) {
+    return res.status(400).json({ message: 'Bad Request: Missing required data.' });
+  }
+
+  // --- Part 2: Run the Analysis ---
   console.log("Starting analysis...");
   const analysisResults = {
     queryFraming: await analyzeQueryFraming(userQuery),
@@ -21,20 +30,18 @@ export default async function handler(req, res) {
   const { overallScore, summary } = synthesizeScore(analysisResults);
   console.log(`Analysis complete. Overall Score: ${overallScore}`);
 
-  // For our first version, the Alternative Answer will be a simple message.
   const alternativeAnswer = "The Alternative Answer feature is in development. It will show a corrected response here.";
 
   // --- Part 4: Serve the Food ---
-  // Send the final result back to the browser extension.
   res.status(200).json({
     overallScore,
     summary,
     alternativeAnswer,
-    metrics: analysisResults 
+    metrics: analysisResults
   });
-}
+};
 
-// --- The Helper Functions (Our Recipe Steps) ---
+// --- Helper Functions (No changes needed here, but included for completeness) ---
 
 async function analyzeQueryFraming(userQuery) {
   console.log("Analyzing query framing...");
